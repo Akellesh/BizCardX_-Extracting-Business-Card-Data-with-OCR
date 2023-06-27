@@ -9,11 +9,10 @@ import easyocr
 import psycopg2
 import psycopg2.extras
 import re
-import time
 import io
 from PIL import Image
 
-st.set_page_config(page_title="BizCardX Project Menu", layout="wide")
+st.set_page_config(page_title="BBizCardX_ Extracting Business Card Data with OCR", layout="wide")
 
 # User Login Authentication
 names = ["administrator", "manager"]
@@ -30,14 +29,17 @@ authenticator = stauth.Authenticate(names, usernames, hashed_passwords,
 
 names, authentication_status, username = authenticator.login("Login", "main")
 
+
 # Initialize DataBase connection.
 # Uses st.cache_resource to only run once.
 @st.cache_resource
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
 
+
 conn = init_connection()
 cur = conn.cursor()
+
 
 # Processing Extra Text Data
 def uploaded_image(Card_img):
@@ -79,6 +81,7 @@ def uploaded_image(Card_img):
             image_dict[key] = [values]
     return image_dict
 
+
 # User Login Process - all states
 if authentication_status == False:
     st.error("Username / Password is incorrect, Please Try Again!!!")
@@ -89,29 +92,29 @@ if authentication_status == None:
 if authentication_status:
     st.write(f"Welcome {names}")
     # authenticator.logout("Logout", "main")
-    selected = option_menu(
-        menu_title="BizCardX Project Menu",
-        options=["Home", "Upload and Manage DB", "Settings", "Contact"],
-        icons=["house", "upload", "gear", "envelope"],
-        menu_icon="cast",
-        default_index=0,
-        orientation="horizontal",
-        styles={
-            "container": {"padding": "0!important", "background-color": "#AFBFAB"},
-            "icon": {"color": "orange", "font-size": "15px"},
-            "nav-link": {
-                "font-size": "15px",
-                "text-align": "left",
-                "margin": "5px",
-                "--hover-color": "#eee",
+    with st.sidebar:
+        selected = option_menu(
+            menu_title="BizCardX Project Menu",
+            options=["Home", "Upload and Manage DB", "Settings", "Contact"],
+            icons=["house", "upload", "gear", "envelope"],
+            menu_icon="cast",
+            default_index=0,
+            # orientation="horizontal",
+            styles={
+                "container": {"padding": "0!important", "background-color": "#AFBFAB"},
+                "icon": {"color": "orange", "font-size": "15px"},
+                "nav-link": {
+                    "font-size": "15px",
+                    "text-align": "left",
+                    "margin": "5px",
+                    "--hover-color": "#eee",
+                },
+                "nav-link-selected": {"background-color": "grey"},
             },
-            "nav-link-selected": {"background-color": "grey"},
-        },
-    )
+        )
     # authenticator.logout("Logout", "main")
     df = []
     bound1_df = []
-
     # Image Reader : EasyOCR
     @st.cache_data
     def image_reco_easyocr():
@@ -131,7 +134,6 @@ if authentication_status:
             st.image(input_uploaded_image_file, width=400, caption='Uploaded Customer Business Card')
             bounds1 = reader_easyocr.readtext(np.array(input_uploaded_image_file), detail=0)
             bounds1_df = uploaded_image(bounds1)
-            bounds_df = bounds1_df
             df = pd.DataFrame(bounds1_df)
             st.dataframe(df)
 
@@ -145,8 +147,8 @@ if authentication_status:
             Total_df = pd.concat([df, df1], axis=1)
 
             # DataBase Operations
-            # st.subheader("Manage Customer data")
-            if st.button('Create Contact in DB'):
+            create = st.button('Create Contact in DB')
+            if create:
                 with st.spinner('Connecting with database...'):
                     # conn.rollback()
                     # Create Table in Database
@@ -155,7 +157,7 @@ if authentication_status:
                     #                 "WEBSITE VARCHAR(50), ADDRESS TEXT, PINCODE VARCHAR(50), BIZ_CARD BYTEA);"
                     # # run_create_query(create_script)
                     # cur.execute(create_script)
-                    # conn.commit()
+
                     # conn.rollback()
                     insert_script = "INSERT INTO CUSTOMERS (NAME, DESIGNATION, COMPANY_NAME, CONTACT, EMAIL, " \
                                     "WEBSITE, ADDRESS, PINCODE, BIZ_CARD) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"
@@ -163,35 +165,19 @@ if authentication_status:
                         final_values = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8])
                         cur.execute(insert_script, final_values)
                         conn.commit()
+                    st.success('Customer Business Card Stored successfully')
 
-                st.success('Customer Business Card Stored successfully')
-
-    # if selected == "Manage DB":
-            #st.subheader("Manage Customer data")
             selected = option_menu(
                 menu_title="Manage Customer Data",
-                options=["View", "Update", "Delete"],
-                icons=["house", "upload", "envelope"],
-                menu_icon="cast",
+                options=["Update", "Delete"],
+                icons=["database-add", "database-dash"],
+                menu_icon="database-gear",
                 default_index=0,
                 orientation="horizontal")
 
-            if selected == "View":
-                conn.rollback()
-                show_list = cur.execute("SELECT NAME FROM CUSTOMERS")
-                list_of_names = cur.fetchall()
-                names = ["Select Customer Name"]
-                for i in list_of_names:
-                    if i not in names:
-                        names.append(i[0])
-                selected_name = st.selectbox("Select Customer Details", options=names)
+            if selected == "Update":
 
-            # fix below
-            col1, col2 = st.columns([4, 4])
-            with col1:
-                # st.button('View and Update')
-                view = st.button('View and Update')
-
+                # fix below
                 col_1, col_2 = st.columns([4, 4])
                 with col_1:
                     edited_name = st.text_input('Name', bounds1_df["Name"][0])
@@ -207,28 +193,36 @@ if authentication_status:
                     edited_pin = st.text_input('Pincode', bounds1_df["Pincode"][0])
                     Total_df["Email"], Total_df["Website"], Total_df["Address"], Total_df["Pincode"] = edited_email, \
                         edited_web, edited_add, edited_pin
-                    if selected_name and view:
-                        cur.execute(f"SELECT * FROM CUSTOMERS WHERE NAME = '{selected_name}';")
-                        selected_result = cur.fetchall()
+                update = st.button("Update and Preview")
+                if update:
+                    st.spinner("Updating data...")
+                    modified_df = Total_df[['Name', 'Designation', 'Company', 'Contact', 'Email', 'Website', 'Address',
+                                            'Pincode']]
+                    st.dataframe(modified_df)
+                    update_script = "UPDATE CUSTOMERS SET (NAME, DESIGNATION, " \
+                                    "COMPANY_NAME, CONTACT, EMAIL, WEBSITE, " \
+                                    "ADDRESS, PINCODE) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+                    for index, i in modified_df.iterrows():
+                        final_values1 = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7])
+                        cur.execute(update_script, final_values1)
                         conn.commit()
-                        st.dataframe(selected_result)
-                        conn.rollback()
-                        update_script = "INSERT INTO CUSTOMERS (NAME, DESIGNATION, " \
-                                        "COMPANY_NAME, CONTACT, EMAIL, WEBSITE, " \
-                                        "ADDRESS, PINCODE) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
-                        for index, i in Total_df.iterrows():
-                            final_values1 = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7])
-                            cur.execute(update_script, final_values1)
-                            conn.commit()
+                    st.success("Data updated successfully")
 
-            st.success('Customer Business Card Updated successfully')
-
-            with col2:
+            if selected == "Delete":
+                show_list = cur.execute("SELECT NAME FROM CUSTOMERS")
+                list_of_names = cur.fetchall()
+                names = ["Select Customer Name"]
+                for i in list_of_names:
+                    if i not in names:
+                        names.append(i[0])
+                selected_name = st.selectbox("Select Customer Details", options=names)
                 delete = st.button('Delete Customer Data')
                 if selected_name and delete:
+                    st.spinner("Customer Data being deleted...")
                     delete_script = f"DELETE FROM CUSTOMERS WHERE NAME ='{selected_name}'"
                     cur.execute(delete_script)
                     conn.commit()
+                    st.success('Customer Business Card Deleted successfully')
 
     # User Settings
     if selected == "Settings":
