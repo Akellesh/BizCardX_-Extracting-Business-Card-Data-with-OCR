@@ -121,8 +121,6 @@ if authentication_status:
         reader = easyocr.Reader(['en'])
         return reader
 
-    reader_easyocr = image_reco_easyocr()
-
     if selected == "Upload and Manage DB":
         # User upload the image
         st.subheader("Upload and View Business cards")
@@ -130,6 +128,7 @@ if authentication_status:
 
         if uploaded_image_file is not None:
             # Image received, processed and displayed the Image
+            reader_easyocr = image_reco_easyocr()
             input_uploaded_image_file = Image.open(uploaded_image_file)
             st.image(input_uploaded_image_file, width=400, caption='Uploaded Customer Business Card')
             bounds1 = reader_easyocr.readtext(np.array(input_uploaded_image_file), detail=0)
@@ -176,8 +175,6 @@ if authentication_status:
                 orientation="horizontal")
 
             if selected == "Update":
-
-                # fix below
                 col_1, col_2 = st.columns([4, 4])
                 with col_1:
                     edited_name = st.text_input('Name', bounds1_df["Name"][0])
