@@ -196,11 +196,13 @@ if authentication_status:
                     modified_df = Total_df[['Name', 'Designation', 'Company', 'Contact', 'Email', 'Website', 'Address',
                                             'Pincode']]
                     st.dataframe(modified_df)
-                    update_script = "UPDATE CUSTOMERS SET (NAME, DESIGNATION, " \
-                                    "COMPANY_NAME, CONTACT, EMAIL, WEBSITE, " \
-                                    "ADDRESS, PINCODE) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+                    # conn.rollback()
+                    update_script = "UPDATE CUSTOMERS SET NAME = %s, DESIGNATION = %s, " \
+                                    "COMPANY_NAME = %s, CONTACT=%s, EMAIL=%s, WEBSITE=%s, " \
+                                    "ADDRESS = %s, PINCODE = %s WHERE NAME =%s";
+                    
                     for index, i in modified_df.iterrows():
-                        final_values1 = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7])
+                        final_values1 = (i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[0])
                         cur.execute(update_script, final_values1)
                         conn.commit()
                     st.success("Data updated successfully")
