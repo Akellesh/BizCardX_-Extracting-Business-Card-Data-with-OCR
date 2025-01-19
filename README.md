@@ -4,12 +4,11 @@ BizCardX_ Extracting Business Card Data with OCR
 This project is designed in PyCharm Community edition
 
 Process involved in the project,
-1. Extract business card from user
-2. Convert the text image in to text data
-3. Analyse and organize data in single format
-4. Store the data in the database
-5. If required user can update the data
-6. User able to delete the data as well
+1. Extracting business card from the user and converting the text image in to text data.
+2. Analyse, organize and store the data as a single format in PostfreSQL database.
+3. Also user can view, update or delete the data.
+4. Multiple users authentication build for login into BizcardX application.
+
 
 **Packages used in the project are,
 Numpy, Pandas, Pickle, streamlit, streamlit_option_menu, streamlit_authenticator, easyocr, psycopg2, re, io, PIL**
