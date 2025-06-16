@@ -1,0 +1,6 @@
+Streamlit Authenticator:
+
+https://www.youtube.com/watch?v=JoFGrSRj4X4&t=163s
+
+PostreSQL_Python_link_code:
+https://www.youtube.com/watch?v=M2NzvnfS-hI 
